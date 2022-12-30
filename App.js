@@ -6,6 +6,7 @@ import {
   View,
   TextInput,
   ScrollView,
+  Alert,
 } from "react-native";
 import styled from "@emotion/native";
 
@@ -14,57 +15,183 @@ import { Feather } from "@expo/vector-icons";
 
 import React, { useState } from "react";
 
+import uuid from "react-native-uuid";
+
 const App = () => {
-  // 테스트용 리스트
+  // 0. 테스트용 리스트
   const testList = ["실행컨텍스트 공부", "ES6 공부"];
 
-  // 입력값 state
+  // 2. state 생성하기
   const [text, setText] = useState("");
+  const [todos, setTodos] = useState([]);
+  const [category, setCategory] = useState("date");
+  const [editText, setEditText] = useState("");
 
-  // 투두리스트 state
-  const [todoList, setTodoList] = useState([]);
+  // 1. 데이터 설계하기
+  const newTodos = {
+    id: uuid.v4(),
+    isDone: false,
+    isEdit: false,
+    text: text,
+    category: category,
+  };
+
+  // 3. 함수 작성하기
+
+  // 3-1. saveInput
+  // input 값을 받아 text에 저장한다
+  const saveInput = (enteredText) => {
+    setText(enteredText);
+  };
+  // console.log("text: ", text);
+
+  // 3-2. addTodo
+  // text를 받아 만든 newTodo를 Todos에 추가한다
+  const addTodo = () => {
+    setTodos((prev) => [...todos, newTodos]);
+    setText("");
+  };
+  // console.log("todos: ", todos);
+
+  // 3-3. category의 토글링 기능을 적용한다 : 버튼 색깔, 화면 출력
+  // console.log("todos.category: ", category);
+
+  // 3-4. doneTodo
+  // 체크 버튼을 누르면 isDone을 토글한다 : 취소선
+  const doneTodo = (id) => {
+    const newTodos = [...todos];
+    const idx = newTodos.findIndex((todo) => todo.id === id);
+    newTodos[idx].isDone = !newTodos[idx].isDone;
+    // console.log("newTodos[idx].isDone: ", newTodos[idx].isDone);
+    setTodos(newTodos);
+  };
+
+  // 3-5. deleteTodo
+  // 휴지통 버튼을 누르면 해당 Todo를 삭제한다
+  const deleteTodo = (id) => {
+    Alert.alert("Todo 삭제", "정말로 삭제하시겠습니까?", [
+      {
+        text: "cancle",
+        onPress: () => console.log("cancle"),
+      },
+      {
+        text: "OK",
+        onPress: () => {
+          const newTodos = todos.filter((todo) => todo.id !== id);
+          setTodos(newTodos);
+        },
+      },
+    ]);
+  };
+
+  // 3-6. changeEditInput
+  // 편집 버튼을 누르면 isEdit을 토글링한다 : 해당 텍스트를 인풋으로 바꾼다
+  const changeEditInput = (id) => {
+    const newTodos = [...todos];
+    const idx = newTodos.findIndex((todo) => todo.id === id);
+    newTodos[idx].isEdit = !newTodos[idx].isEdit;
+    // console.log("newTodos[idx].isEdit: ", newTodos[idx].isEdit);
+    setTodos(newTodos);
+  };
+
+  // 3-7. saveEditInput
+  // input 값을 받아 editText에 저장한다
+  const saveEditInput = (enterdText) => {
+    setEditText(enterdText);
+  };
+  // console.log("editText: ", editText);
+
+  // 3-8. editTodo
+  // editInput 값을 입력 받아 Todos를 수정한다
+  const editTodo = (id) => {
+    const newTodos = [...todos];
+    const idx = newTodos.findIndex((todo) => todo.id === id);
+    newTodos[idx].text = editText;
+    // console.log("newTodos[idx].text: ", newTodos[idx].text);
+    newTodos[idx].isEdit = false;
+    setTodos(newTodos);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <StNav className="Nav">
-          <StNavButton>
-            <StNavText>JavaScript</StNavText>
+          <StNavButton
+            onPress={() => setCategory("date")}
+            style={{
+              backgroundColor: category === "date" ? "#ffb3ff" : "#96e4eb",
+            }}
+          >
+            <StNavText>데이트</StNavText>
           </StNavButton>
-          <StNavButton>
-            <StNavText>React</StNavText>
+          <StNavButton
+            onPress={() => setCategory("minji")}
+            style={{
+              backgroundColor: category === "minji" ? "#ffb3ff" : "#96e4eb",
+            }}
+          >
+            <StNavText>민짜이</StNavText>
           </StNavButton>
-          <StNavButton>
-            <StNavText>ReactNative</StNavText>
+          <StNavButton
+            onPress={() => setCategory("kidongg")}
+            style={{
+              backgroundColor: category === "kidongg" ? "#ffb3ff" : "#96e4eb",
+            }}
+          >
+            <StNavText>동동이</StNavText>
           </StNavButton>
         </StNav>
 
         <View className="Form">
           <StInputContainer>
             <StInput>
-              <TextInput placeholder="Enter your task" style={styles.input} />
+              <TextInput
+                onChangeText={saveInput}
+                onSubmitEditing={addTodo}
+                value={text}
+                placeholder="Enter your task"
+                style={styles.input}
+              />
             </StInput>
           </StInputContainer>
         </View>
 
         <View className="TodoList">
-          {testList.map((item) => {
-            return (
-              <StTodo>
-                <Text>{item}</Text>
-                <StTodoButtons>
-                  <StTodoButton>
-                    <AntDesign name="checksquareo" size={24} color="black" />
-                  </StTodoButton>
-                  <StTodoButton>
-                    <Feather name="edit" size={24} color="black" />
-                  </StTodoButton>
-                  <StTodoButton>
-                    <AntDesign name="delete" size={24} color="black" />
-                  </StTodoButton>
-                </StTodoButtons>
-              </StTodo>
-            );
+          {todos.map((todo) => {
+            if (todo.category === category) {
+              return (
+                <StTodo key={todo.id}>
+                  {todo.isEdit === true ? (
+                    <TextInput
+                      onSubmitEditing={() => editTodo(todo.id)}
+                      onChangeText={saveEditInput}
+                      value={editText}
+                      style={{ backgroundColor: "white", flex: 1 }}
+                    ></TextInput>
+                  ) : (
+                    <Text
+                      style={{
+                        textDecorationLine:
+                          todo.isDone === true ? "line-through" : "none",
+                      }}
+                    >
+                      {todo.text}
+                    </Text>
+                  )}
+                  <StTodoButtons>
+                    <StTodoButton onPress={() => doneTodo(todo.id)}>
+                      <AntDesign name="checksquareo" size={24} color="black" />
+                    </StTodoButton>
+                    <StTodoButton onPress={() => changeEditInput(todo.id)}>
+                      <Feather name="edit" size={24} color="black" />
+                    </StTodoButton>
+                    <StTodoButton onPress={() => deleteTodo(todo.id)}>
+                      <AntDesign name="delete" size={24} color="black" />
+                    </StTodoButton>
+                  </StTodoButtons>
+                </StTodo>
+              );
+            }
           })}
         </View>
         <StatusBar style="auto" />
@@ -80,6 +207,7 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingLeft: 20,
     paddingRight: 20,
+    // flex: 1,
   },
   input: {
     height: 40,
@@ -91,7 +219,7 @@ const StNav = styled.View`
   justify-content: space-between;
   padding-bottom: 10px;
   margin-bottom: 20px;
-  border-bottom-width: 1;
+  border-bottom-width: 1px;
   border-bottom-color: black;
 `;
 
@@ -100,10 +228,7 @@ const StNavButton = styled.TouchableOpacity`
   height: 50px;
   border: 1px solid black;
   justify-content: center;
-  background-color: #96e4eb;
-  /* hover {
-    background-color: #f7d528;
-  } */
+  /* background-color: #96e4eb; */
 `;
 
 const StNavText = styled.Text`
@@ -112,7 +237,7 @@ const StNavText = styled.Text`
 `;
 
 const StInputContainer = styled.View`
-  border-bottom-width: 1;
+  border-bottom-width: 1px;
   border-bottom-color: black;
   margin: 0 0 20px 0;
 `;
