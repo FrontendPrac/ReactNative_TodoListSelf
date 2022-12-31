@@ -13,9 +13,11 @@ import styled from "@emotion/native";
 import { AntDesign } from "@expo/vector-icons";
 import { Feather } from "@expo/vector-icons";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import uuid from "react-native-uuid";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const App = () => {
   // 0. 테스트용 리스트
@@ -24,7 +26,7 @@ const App = () => {
   // 2. state 생성하기
   const [text, setText] = useState("");
   const [todos, setTodos] = useState([]);
-  const [category, setCategory] = useState("date");
+  const [category, setCategory] = useState("");
   const [editText, setEditText] = useState("");
 
   // 1. 데이터 설계하기
@@ -112,12 +114,46 @@ const App = () => {
     setTodos(newTodos);
   };
 
+  // 4. 데이터를 async-storage에 저장하고 불러온다
+  // 4-1. saveTodos
+  useEffect(() => {
+    try {
+      const saveTodos = async () => {
+        await AsyncStorage.setItem("todos", JSON.stringify(todos));
+      };
+      if (todos.length > 0) saveTodos();
+    } catch {
+      console.log("Error");
+    }
+  }, [todos]);
+
+  // 4-2. saveCategory
+  const saveCategory = async (cat) => {
+    setCategory(cat);
+    await AsyncStorage.setItem("category", cat);
+  };
+
+  // 4-3. getTodos
+  useEffect(() => {
+    try {
+      const getTodos = async () => {
+        const receive_todos = await AsyncStorage.getItem("todos");
+        const receive_category = await AsyncStorage.getItem("category");
+        setTodos(JSON.parse(receive_todos));
+        setCategory(receive_category ?? "데이트");
+      };
+      getTodos();
+    } catch {
+      console.log("Error");
+    }
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <StNav className="Nav">
           <StNavButton
-            onPress={() => setCategory("date")}
+            onPress={() => saveCategory("date")}
             style={{
               backgroundColor: category === "date" ? "#ffb3ff" : "#96e4eb",
             }}
@@ -125,7 +161,7 @@ const App = () => {
             <StNavText>데이트</StNavText>
           </StNavButton>
           <StNavButton
-            onPress={() => setCategory("minji")}
+            onPress={() => saveCategory("minji")}
             style={{
               backgroundColor: category === "minji" ? "#ffb3ff" : "#96e4eb",
             }}
@@ -133,7 +169,7 @@ const App = () => {
             <StNavText>민짜이</StNavText>
           </StNavButton>
           <StNavButton
-            onPress={() => setCategory("kidongg")}
+            onPress={() => saveCategory("kidongg")}
             style={{
               backgroundColor: category === "kidongg" ? "#ffb3ff" : "#96e4eb",
             }}
